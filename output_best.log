@@ -1,0 +1,22 @@
+2.0.0+cu117
+
+Dataset: Cora():
+======================
+Number of graphs: 1
+Number of features: 1433
+Number of classes: 7
+
+================================================================================
+Number of nodes: 2708
+Number of edges: 10556
+Average node degree: 3.90
+Number of training nodes: 140
+Training node label rate: 0.05
+Has isolated nodes: False
+Has self-loops: False
+Is undirected: True
+GCN(
+  (conv1): GCNConv(1433, 512)
+  (conv2): GCNConv(512, 7)
+)
+  0%|          | 0/500 [00:00<?, ?it/s]
