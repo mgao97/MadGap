@@ -1,0 +1,79 @@
+2.0.0+cu117
+
+Dataset: KarateClub():
+======================
+Number of graphs: 1
+Number of features: 34
+Number of classes: 4
+
+================================================================================
+Number of nodes: 34
+Number of edges: 156
+Average node degree: 4.59
+Number of training nodes: 4
+Training node label rate: 0.12
+Has isolated nodes: False
+Has self-loops: False
+Is undirected: True
+GCN(
+  (conv1): GCNConv(34, 5)
+  (conv2): GCNConv(5, 2)
+)
+  0%|          | 0/8 [00:00<?, ?it/s] 12%|█▎        | 1/8 [00:00<00:02,  2.92it/s] 25%|██▌       | 2/8 [00:00<00:02,  2.75it/s] 38%|███▊      | 3/8 [00:01<00:01,  2.71it/s] 50%|█████     | 4/8 [00:01<00:01,  2.68it/s] 62%|██████▎   | 5/8 [00:02<00:01,  2.00it/s] 75%|███████▌  | 6/8 [00:03<00:01,  1.62it/s] 88%|████████▊ | 7/8 [00:03<00:00,  1.48it/s]100%|██████████| 8/8 [00:04<00:00,  1.70it/s]100%|██████████| 8/8 [00:04<00:00,  1.88it/s]
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.6983, grad_fn=<NllLossBackward0>) tensor([2.1931], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7056) tensor([2.1931])
+Epoch: 000, Loss: 2.8914, Val Loss: 2.8892, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7051, grad_fn=<NllLossBackward0>) tensor([2.2700], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7054) tensor([2.2700])
+Epoch: 001, Loss: 2.9750, Val Loss: 2.9658, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7052, grad_fn=<NllLossBackward0>) tensor([2.3661], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7049) tensor([2.3661])
+Epoch: 002, Loss: 3.0713, Val Loss: 3.0615, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7061, grad_fn=<NllLossBackward0>) tensor([2.3439], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7045) tensor([2.3439])
+Epoch: 003, Loss: 3.0500, Val Loss: 3.0388, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7111, grad_fn=<NllLossBackward0>) tensor([2.0728], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7041) tensor([2.0728])
+Epoch: 004, Loss: 2.7839, Val Loss: 2.7671, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7018, grad_fn=<NllLossBackward0>) tensor([2.2322], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7037) tensor([2.2322])
+Epoch: 005, Loss: 2.9340, Val Loss: 2.9259, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7068, grad_fn=<NllLossBackward0>) tensor([2.0679], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7032) tensor([2.0679])
+Epoch: 006, Loss: 2.7748, Val Loss: 2.7610, Val ACC: 0.5000
+DiGraph with 34 nodes and 156 edges
+34 156
+**************************************************
+tensor(0.7023, grad_fn=<NllLossBackward0>) tensor([2.1586], grad_fn=<AddBackward0>)
+==================================================
+tensor(0.7027) tensor([2.1586])
+Epoch: 007, Loss: 2.8609, Val Loss: 2.8510, Val ACC: 0.5000
+Test Accuracy: 0.2500

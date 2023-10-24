@@ -8,8 +8,10 @@ from torch_geometric.utils import to_networkx
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import k_hop_subgraph
-from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import KarateClub
 from torch_geometric.transforms import NormalizeFeatures
+
+import dgl
 
 
 
@@ -27,7 +29,7 @@ def visualize(h, color):
     plt.yticks([])
 
     plt.scatter(z[:, 0], z[:, 1], s=70, c=color, cmap="Set2")
-    plt.savefig('figs/cora_best.png')
+    plt.savefig('figs/karate_best.png')
 
 
 def accuracy(y_pred, y_true):
@@ -68,8 +70,8 @@ def get_pos_neg_distances(data, out, hop_neigh, hop_remote):
     pos_sim_stacked = torch.stack(pos_sim, dim=0)
     neg_sim_stacked = torch.stack(neg_sim, dim=0)
 
-    print('pos sim shape and neg sim shape: ')
-    print(pos_sim_stacked.shape, neg_sim_stacked.shape)
+    # print('pos sim shape and neg sim shape: ')
+    # print(pos_sim_stacked.shape, neg_sim_stacked.shape)
 
     pos_dis = 1 - pos_sim_stacked
     neg_dis = 1 - neg_sim_stacked
@@ -127,7 +129,7 @@ class GCN(nn.Module):
 
 def main():
     
-    dataset = Planetoid(root='data/Planetoid', name='Cora', transform=NormalizeFeatures())
+    dataset = KarateClub(transform=NormalizeFeatures())
     print()
     print(f'Dataset: {dataset}:')
     print('======================')
@@ -149,6 +151,8 @@ def main():
     print(f'Has self-loops: {data.has_self_loops()}')
     print(f'Is undirected: {data.is_undirected()}')
 
+    karate_club_dataset = dgl.data.KarateClubDataset()
+    ground_truth = karate_club_dataset[0].ndata["label"]
     #  # 创建一个空的 NetworkX 图
     # # 创建一个空的 NetworkX 图
     # G = nx.Graph()
@@ -166,16 +170,35 @@ def main():
     # print(f'graph diameter:', nx.diameter(G))
 
 
-    model = GCN(dataset.num_features, 512, dataset.num_classes)
+    model = GCN(dataset.num_features, 5, 2)
     print(model)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
     cross_entropy = torch.nn.CrossEntropyLoss()
     margin_ranking = MarginRankignLoss(margin=1.0)
-    hop_neigh, hop_remote = 3, 8
+    hop_neigh, hop_remote = 2, 4
     best_val_acc = 0
-    num_epochs = 2
+    num_epochs = 8
     train_losses, val_losses = [], []
+
+    test_mask = torch.tensor([ True, False, False, False,  
+                               True, False, False, False,  
+                               True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
+                               True, False,  False, False, False, False, False, False, False, False])
+
+    val_mask = torch.tensor([ False, True, False, False,  
+                             False, True, False, False,  
+                             False, True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, 
+                             False, True, False, False, False, False, False, False, False, False])
+
+    train_mask = torch.tensor([ False, False, True, True, 
+                              False, False,  True, True, 
+                              False, False, True, True, True, True, True, True, True, True, True, True, True, True, True, True,
+                              False, False, True, True, True, True, True, True, True, True])
+    
+    data.train_mask = train_mask
+    data.val_mask = val_mask
+    data.test_mask = test_mask
 
 
     
@@ -185,19 +208,26 @@ def main():
         optimizer.zero_grad()
         out = model(data.x, data.edge_index)
         pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis = get_pos_neg_distances(data, out, hop_neigh, hop_remote)
-        loss = cross_entropy(out[data.train_mask], data.y[data.train_mask]) + margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis)
+        loss = cross_entropy(out[data.train_mask], ground_truth[data.train_mask]) + margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis)
+        
+        print('*'*50)
+        print(cross_entropy(out[data.train_mask], ground_truth[data.train_mask]), margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis))
         train_losses.append(loss.item())
         loss.backward()
         optimizer.step()
 
+
         with torch.no_grad():
             model.eval()
             out = model(data.x, data.edge_index)
-            val_loss = cross_entropy(out[data.val_mask], data.y[data.val_mask]) + margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis)
-            val_pred = out.argmax(dim=1)
+            val_loss = cross_entropy(out[data.val_mask], ground_truth[data.val_mask]) + margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis)
+            
+            print('='*50)
+            print(cross_entropy(out[data.train_mask], ground_truth[data.train_mask]), margin_ranking(pos_sim_stacked, neg_sim_stacked, pos_dis, neg_dis))
+            val_pred = F.log_softmax(out, 1).argmax(dim=-1)
             val_losses.append(val_loss.item())
             
-            val_acc = accuracy(val_pred[data.val_mask], data.y[data.val_mask])
+            val_acc = accuracy(val_pred[data.val_mask], ground_truth[data.val_mask])
 
         if val_acc >= best_val_acc:
             best_val_acc = val_acc
@@ -214,17 +244,17 @@ def main():
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('figs/loss_curve_best.png')
+    plt.savefig('figs/loss_curve_karate_best.png')
 
     model.eval()
-    model = best_model
+    # model = best_model
     out = model(data.x, data.edge_index)
-    test_pred = out.argmax(dim=1)
-    test_acc = accuracy(test_pred[data.test_mask], data.y[data.test_mask])
+    test_pred = F.log_softmax(out,1).argmax(dim=-1)
+    test_acc = accuracy(test_pred[data.test_mask], ground_truth[data.test_mask])
     print(f'Test Accuracy: {test_acc:.4f}')
     
     best_out = model(data.x, data.edge_index)
-    visualize(best_out, color=data.y)
+    visualize(best_out, color=ground_truth)
 
 
 
