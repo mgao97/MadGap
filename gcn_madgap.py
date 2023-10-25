@@ -34,50 +34,120 @@ def accuracy(y_pred, y_true):
     correct = correct.sum().item()
     return correct / len(y_true)
 
+
+# def compute_2hop_neighbor_matrix(data, target_index):
+#     # 创建一个零矩阵，形状为(num_nodes, num_nodes)
+#     num_nodes = data.num_nodes
+#     neighbor_matrix = torch.zeros((num_nodes, num_nodes))
+
+#     # 获取目标节点的邻居节点
+#     target_neighbors = set(data.edge_index[1, data.edge_index[0] == target_index].tolist())
+
+#     # 创建一个副本以避免修改正在迭代的集合
+#     new_target_neighbors = target_neighbors.copy()
+
+#     # 获取2跳邻居节点
+#     for neighbor in target_neighbors:
+#         neighbor_neighbors = set(data.edge_index[1, data.edge_index[0] == neighbor].tolist())
+#         new_target_neighbors.update(neighbor_neighbors)
+
+#     return neighbor_matrix
 def compute_2hop_neighbor_matrix(data, target_index):
-    # 创建一个零矩阵，形状为(num_nodes, num_nodes)
     num_nodes = data.num_nodes
-    neighbor_matrix = torch.zeros((num_nodes, num_nodes))
 
-    # 获取目标节点的邻居节点
-    target_neighbors = set(data.edge_index[1, data.edge_index[0] == target_index].tolist())
+    # 创建一个张量，其中每个节点都有一个表示其2跳邻居的布尔掩码
+    neighbor_mask = torch.zeros(num_nodes, dtype=torch.bool)
 
-    # 创建一个副本以避免修改正在迭代的集合
-    new_target_neighbors = target_neighbors.copy()
+    # 获取目标节点的邻居
+    target_neighbors = data.edge_index[1, data.edge_index[0] == target_index]
 
-    # 获取2跳邻居节点
+    # 获取2跳邻居的掩码
     for neighbor in target_neighbors:
-        neighbor_neighbors = set(data.edge_index[1, data.edge_index[0] == neighbor].tolist())
-        new_target_neighbors.update(neighbor_neighbors)
+        neighbor_neighbors = data.edge_index[1, data.edge_index[0] == neighbor]
+        neighbor_mask[neighbor_neighbors] = 1
+
+    # 创建2跳邻居矩阵
+    neighbor_matrix = torch.zeros((num_nodes, num_nodes))
+    neighbor_matrix[target_index, neighbor_mask] = 1
 
     return neighbor_matrix
 
-
-
 def compute_8hop_neighbor_matrix(data, target_index, hop_remote):
-    # 创建一个零矩阵，形状为(num_nodes, num_nodes)
     num_nodes = data.num_nodes
     neighbor_matrix = torch.zeros((num_nodes, num_nodes))
 
     # 获取目标节点的邻居节点
-    target_neighbors = set(data.edge_index[1, data.edge_index[0] == target_index].tolist())
+    target_neighbors = data.edge_index[1, data.edge_index[0] == target_index]
 
-    # 逐层获取邻居节点，直到8跳
     for _ in range(hop_remote):
         new_neighbors = set()
         for neighbor in target_neighbors:
-            new_neighbors.update(data.edge_index[1, data.edge_index[0] == neighbor].tolist())
-        target_neighbors.update(new_neighbors)
+            # 获取邻居节点
+            neighbor_neighbors = data.edge_index[1, data.edge_index[0] == neighbor]
+            new_neighbors.update(neighbor_neighbors.tolist())
+        target_neighbors = torch.tensor(list(new_neighbors))  # 将 Python 列表转换为张量
 
-    # 填充1，表示目标节点和8-hop之外的邻居节点之间有连接
-    neighbor_matrix[target_index, list(target_neighbors)] = 1
-    neighbor_matrix[list(target_neighbors), target_index] = 1
+    # 填充1，表示目标节点和指定跳数以外的邻居节点之间有连接
+    neighbor_matrix[target_index, target_neighbors] = 1
+    neighbor_matrix[target_neighbors, target_index] = 1
 
-    # 将8-hop以内的邻接信息标注为0
+    # 将指定跳数以内的邻接信息标记为0
     neighbor_matrix[target_index, target_index] = 0
-    neighbor_matrix[list(target_neighbors), list(target_neighbors)] = 0
+    neighbor_matrix[target_neighbors, target_neighbors] = 0
 
     return neighbor_matrix
+
+# def compute_8hop_neighbor_matrix(data, target_index, hop_remote):
+#     num_nodes = data.num_nodes
+#     neighbor_matrix = torch.zeros((num_nodes, num_nodes))
+
+#     # 获取目标节点的邻居节点，将其放入一个 Python 集合
+#     target_neighbors = set(data.edge_index[1, data.edge_index[0] == target_index].tolist())
+
+#     # 逐层获取邻居节点，直到指定的跳数
+#     for _ in range(hop_remote):
+#         new_neighbors = set()
+#         for neighbor in target_neighbors:
+#             # 获取邻居节点，将其放入集合
+#             new_neighbors.update(data.edge_index[1, data.edge_index[0] == neighbor].tolist())
+#         target_neighbors.update(new_neighbors)
+
+#     # 填充1，表示目标节点和指定跳数以外的邻居节点之间有连接
+#     neighbor_matrix[target_index, list(target_neighbors)] = 1
+#     neighbor_matrix[list(target_neighbors), target_index] = 1
+
+#     # 将指定跳数以内的邻接信息标记为0
+#     neighbor_matrix[target_index, target_index] = 0
+#     neighbor_matrix[list(target_neighbors), list(target_neighbors)] = 0
+
+#     return neighbor_matrix
+
+
+
+# def compute_8hop_neighbor_matrix(data, target_index, hop_remote):
+#     # 创建一个零矩阵，形状为(num_nodes, num_nodes)
+#     num_nodes = data.num_nodes
+#     neighbor_matrix = torch.zeros((num_nodes, num_nodes))
+
+#     # 获取目标节点的邻居节点
+#     target_neighbors = set(data.edge_index[1, data.edge_index[0] == target_index].tolist())
+
+#     # 逐层获取邻居节点，直到8跳
+#     for _ in range(hop_remote):
+#         new_neighbors = set()
+#         for neighbor in target_neighbors:
+#             new_neighbors.update(data.edge_index[1, data.edge_index[0] == neighbor].tolist())
+#         target_neighbors.update(new_neighbors)
+
+#     # 填充1，表示目标节点和8-hop之外的邻居节点之间有连接
+#     neighbor_matrix[target_index, list(target_neighbors)] = 1
+#     neighbor_matrix[list(target_neighbors), target_index] = 1
+
+#     # 将8-hop以内的邻接信息标注为0
+#     neighbor_matrix[target_index, target_index] = 0
+#     neighbor_matrix[list(target_neighbors), list(target_neighbors)] = 0
+
+#     return neighbor_matrix
 
 
 

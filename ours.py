@@ -276,6 +276,7 @@ def main():
 
     model = GCNModel(data.num_features, num_hidden, dataset.num_classes)
     model.load_state_dict(torch.load('models/ours.pth'))
+    model.eval()
     test_acc, test_acc_std = test()
     print(f'Test Accuracy: {test_acc:.4f}, Test Acc std: {test_acc_std:.4f}')
 
